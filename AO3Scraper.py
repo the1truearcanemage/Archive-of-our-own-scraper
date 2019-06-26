@@ -14,6 +14,39 @@ def fetch_from_ao(url, params={}):
     return requests.get(url, params=params, cookies=tos_cookies, headers=headers).text
 
 
+class Chapter(object):
+    def __init__(self, work_id, chapter_number, title, chapter_html):
+        self.work_id = work_id
+        self.chapter_number = chapter_number
+        self.title = title
+        self.chapter_html = chapter_html
+
+    @staticmethod
+    def fetch_chapters_from_work_id(work_id):
+        page_html = fetch_from_ao(work_chapters_url.format(work_id))
+        soup = BeautifulSoup(page_html, 'lxml')
+
+        chapters = []
+        chapters_elem = soup.find(id='chapters')
+        userstuff_elems = chapters_elem.find_all('div', class_='userstuff', recursive=False) if chapters_elem else []
+        for chapter_number, elem in enumerate(userstuff_elems, start=1):
+            title_elem = None
+
+            elem_prev_sibling = elem.find_previous_sibling()
+            if elem_prev_sibling:
+                if elem_prev_sibling.name == 'h2':
+                    title_elem = elem_prev_sibling
+                elif elem_prev_sibling['class']:
+                    title_elem = elem_prev_sibling.find('h2')
+
+            title = title_elem.text if title_elem else ''
+            chapter_html = elem.decode_contents().strip()
+
+            chapters.append(Chapter(work_id, chapter_number, title, chapter_html))
+
+        return chapters
+
+
 #Class for storing information relating to a single fanfiction work
 class Work(object):
     def __init__(self, work_id, fandom, title, author, summary, warning_tags, relationship_tags, character_tags, assorted_tags, language, words, kudos, hits, bookmarks, comment_count, chapter_count, series_ids):
@@ -82,7 +115,10 @@ class Work(object):
         series_ids = [link_elem['href'].split('/')[-1] for link_elem in series_elem.find_all('a')] if series_elem else []
 
         return Work(work_id, fandom, title, author, summary, warning_tags, relationship_tags, character_tags, assorted_tags, language, words, kudos, hits, bookmarks, comment_count, chapter_count, series_ids)
-
+        
+    #Fetch all chapters for a given work
+    def fetch_chapters(self):
+        return Chapter.fetch_chapters_from_work_id(self.work_id)
 
 #Query paramater constant values
 class SORT_DIR:
@@ -103,6 +139,17 @@ class COMPLETETION_STATUS:
     ANY = ''
     COMPLETE = 'T'
     INPROGRESS = 'F'
+
+class RATING:
+    EXPLICIT = 13
+    MATURE = 12
+    TEEN = 11
+    GENERAL_AUDIENCE = 10
+    NOT_RATED = 9
+
+class LANGUAGE:
+    ENGLISH = 1
+    #TODO: Create a script to rip the rest of the languages
 
 #TODO: Throw error if page has no results, MAYBE NOT THOUGHT BECAUSE THIS IS JUST A FETCHER??
 #Returns a search result page's html
@@ -127,8 +174,7 @@ class SearchQuery(object):
             'work_search[single_chapter]': kwargs.get('single_chapter', 0),
             'work_search[sort_direction]': kwargs.get('sort_direction', SORT_DIR.DESC),
             'work_search[sort_column]': kwargs.get('sort_by', SORT_BY.BEST_MATCH),
-            #TODO: Add in language and rating classes for constants
-            'work_search[rating_ids]': kwargs.get('rating_ids', ''),
+            'work_search[rating_ids]': ','.join(kwargs.get('rating_ids', '')),
             'work_search[language_id': kwargs.get('language_id', '')
         }
 
