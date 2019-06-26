@@ -1,0 +1,7 @@
+- Not all works have a hit count
+- Only 5000 pages of results will be available for a query
+    - The only real recommendation is to constrain search results that cause each split to have less then 5000 pages, fetch them all then merge all the result sets
+        - What I intend to say is ...
+            - take a variable you're not subdividing on
+            - subdivide on it
+            - then merge the results into a single set
