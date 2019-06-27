@@ -76,36 +76,40 @@ class AO3Database(object):
         ''')
         
 
-    def insert_work(self, work):
-        with work as w:
-            #Insert non-list values of work
-            work_params = (w.work_id, w.fandom, w.title, w.author, w.summary, w.language,
-                w.word_count, w.kudos, w.hits, w.bookmarks, w.comment_count, w.chapter_count)
-            self.cursor.execute('INSERT INTO works VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, DateTime("now"))', work_params)
+    def insert_work(self, work, save_chapters=False):
+        w = work
 
-            #Split each list value into it's own table using the work_id as a common key
-            #Insert each tag as it's own row
-            tag_lists = [w.relationship_tags, w.character_tags, w.warning_tags, w.assorted_tags]
-            tag_types = ['relationship', 'character', 'warning', 'assorted']
-            for tag, tag_type in zip(tag_lists, tag_types):
+        #Insert non-list values of work
+        work_params = (w.work_id, w.fandom, w.title, w.author, w.summary, w.language,
+            w.words, w.kudos, w.hits, w.bookmarks, w.comment_count, w.chapter_count)
+        self.cursor.execute('INSERT INTO works VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, DateTime("now"))', work_params)
+
+        #Split each list value into it's own table using the work_id as a common key
+        #Insert each tag as it's own row
+        tag_lists = [w.relationship_tags, w.character_tags, w.warning_tags, w.assorted_tags]
+        tag_types = ['relationship', 'character', 'warning', 'assorted']
+        for tags, tag_type in zip(tag_lists, tag_types):
+            for tag in tags:
                 self.insert_tag(w.work_id, tag, tag_type)
-            #Insert each series as it's own row
-            for series_id in w.series_ids:
-                self.insert_series(w.work_id, series_id)
-            
+        #Insert each series as it's own row
+        for series_id in w.series_ids:
+            self.insert_series(w.work_id, series_id)
+
+        if save_chapters:
+            for chapter in w.fetch_chapters():
+                self.insert_chapter(chapter)
+        
 
     def insert_chapter(self, chapter):
         params = (chapter.work_id, chapter.chapter_number, chapter.title, chapter.html)
-        self.cursor.execute('INSERT INTO chapters VALUES(?,?,?,?)', params)
+        self.cursor.execute('INSERT INTO chapters VALUES (?,?,?,?)', params)
 
     def insert_tag(self, work_id, tag, tag_type):
-        self.cursor.execute('INSERT INTO work_tags VALUES(?,?,?)', (work_id, tag, tag_type))
+        print(tag, ':', tag_type)
+        self.cursor.execute('INSERT INTO work_tags VALUES (?,?,?)', (work_id, tag, tag_type))
 
     def insert_series(self, work_id, series_id):
-        self.cursor.execute('INSERT INTO series VALUES(?,?)', (work_id, series_id))
+        self.cursor.execute('INSERT INTO series VALUES (?,?)', (work_id, series_id))
 
     def get_works(self):
         pass
-
-with AO3Database('works.db') as db:
-    db.insert_chapter(Chapter(123, 1, 'first chapter', '<p>Lorem Ipsum</p>'))
