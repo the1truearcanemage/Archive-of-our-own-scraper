@@ -15,12 +15,13 @@ def fetch_from_ao(url, params={}):
 
 
 class Chapter(object):
-    def __init__(self, work_id, chapter_number, title, chapter_html):
+    def __init__(self, work_id, chapter_number, title, html):
         self.work_id = work_id
         self.chapter_number = chapter_number
         self.title = title
-        self.chapter_html = chapter_html
+        self.html = html
 
+    #Fetch and parse all chapters associated with a work id
     @staticmethod
     def fetch_chapters_from_work_id(work_id):
         page_html = fetch_from_ao(work_chapters_url.format(work_id))
@@ -50,16 +51,11 @@ class Chapter(object):
 #Class for storing information relating to a single fanfiction work
 class Work(object):
     def __init__(self, work_id, fandom, title, author, summary, warning_tags, relationship_tags, character_tags, assorted_tags, language, words, kudos, hits, bookmarks, comment_count, chapter_count, series_ids):
-        self.work_id = int(work_id)
+        self.work_id = work_id
         self.fandom = fandom
         self.title = title
         self.author = author
         self.summary = summary
-        self.warning_tags = warning_tags
-        self.relationship_tags = relationship_tags
-        self.character_tags = character_tags
-        self.warning_tags = warning_tags
-        self.assorted_tags = assorted_tags
         self.language = language
         self.words = words
         self.kudos = kudos
@@ -67,6 +63,10 @@ class Work(object):
         self.bookmarks = bookmarks
         self.comment_count = comment_count
         self.chapter_count = chapter_count
+        self.relationship_tags = relationship_tags
+        self.character_tags = character_tags
+        self.warning_tags = warning_tags
+        self.assorted_tags = assorted_tags
         self.series_ids = series_ids
 
     #Parse required values about a work, from a work search result's html
