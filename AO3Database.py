@@ -84,7 +84,7 @@ class AO3Database(object):
                 work_fandom         TEXT NOT NULL,
                 work_title          TEXT NOT NULL,
                 work_author         TEXT NOT NULL,
-                work_summary        TEXT NOT NULL,
+                work_summary        TEXT,
                 work_language       TEXT NOT NULL,
                 work_word_count     INTEGER NOT NULL,
                 work_kudos          INTEGER NOT NULL,
