@@ -141,14 +141,14 @@ class COMPLETETION_STATUS:
     INPROGRESS = 'F'
 
 class RATING:
-    EXPLICIT = 13
-    MATURE = 12
-    TEEN = 11
-    GENERAL_AUDIENCE = 10
-    NOT_RATED = 9
+    EXPLICIT = '13'
+    MATURE = '12'
+    TEEN = '11'
+    GENERAL_AUDIENCE = '10'
+    NOT_RATED = '9'
 
 class LANGUAGE:
-    ENGLISH = 1
+    ENGLISH = '1'
     #TODO: Create a script to rip the rest of the languages
 
 #TODO: Throw error if page has no results, MAYBE NOT THOUGHT BECAUSE THIS IS JUST A FETCHER??
@@ -184,9 +184,22 @@ class SearchQuery(object):
         result_elements = soup.find_all('li', class_='work blurb group')
         works = [Work.parse_result_element(result_element) for result_element in result_elements]
         return works
+
+    #Parse out the page count from page's html
+    def parse_page_count(self, page_html):
+        soup = BeautifulSoup(page_html, 'lxml')
+        page_count_element_parent = soup.find(class_='pagination actions')
+        page_count_element = page_count_element_parent.find_all('a')[-2]
+        page_count = int(page_count_element.text)
+        return page_count
         
     #Fetch and parse a page of results
     def fetch_page_results(self, page_number):
         self.query_params['page'] = page_number
         page_html = fetch_from_ao(search_url, params=self.query_params)
         return self.parse_page_results(page_html)
+
+    #Fetch results page and parse out the number of results pages
+    def fetch_page_count(self):
+        page_html = fetch_from_ao(search_url, params=self.query_params)
+        return self.parse_page_count(page_html)
