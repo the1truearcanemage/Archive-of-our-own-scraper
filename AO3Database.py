@@ -1,6 +1,51 @@
 import sqlite3
 from AO3Scraper import Work, Chapter
 
+class WorkIterator(object):
+    def __init__(self, conn, load_chapters=False):
+        self.conn = conn
+        self.cursor = conn.cursor()
+        #Fetch all works, with the row elements matching the order of the Work constructor
+        self.cursor.execute('SELECT * FROM works')
+
+    def filter_tags(self, tags, tag_type):
+        return [tag[1] for tag in filter(lambda tag: tag[2] == tag_type, tags)]
+
+    def make_work_from_rows(self, work_row, work_tag_rows, series_id_rows):
+        warning_tags = self.filter_tags(work_tag_rows, 'warning')
+        relationship_tags = self.filter_tags(work_tag_rows, 'relationship')
+        character_tags = self.filter_tags(work_tag_rows, 'character')
+        assorted_tags = self.filter_tags(work_tag_rows, 'assorted')
+        series_ids = [row[1] for row in series_id_rows]
+        return Work(*work_row[:-1], warning_tags, relationship_tags, character_tags, assorted_tags, series_ids)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        work_row = self.cursor.__next__()
+        work_id = work_row[0]
+        work_tag_rows = self.conn.cursor().execute('SELECT * FROM work_tags WHERE work_id=?', (work_id, )).fetchall()
+        series_id_rows = self.conn.cursor().execute('SELECT * FROM series WHERE work_id=?', (work_id, )).fetchall()
+
+        return self.make_work_from_rows(work_row, work_tag_rows, series_id_rows)
+
+class ChapterIterator(object):
+    def __init__(self, conn):
+        self.conn = conn
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('SELECT * FROM chapters')
+
+    def chapter_from_row(self, chapter_row):
+        return Chapter(*chapter_row)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        chapter_row = self.cursor.__next__()
+        return self.chapter_from_row(chapter_row)
+
 class AO3Database(object):
     def __init__(self, filepath=None):
         if filepath:
@@ -105,11 +150,15 @@ class AO3Database(object):
         self.cursor.execute('INSERT INTO chapters VALUES (?,?,?,?)', params)
 
     def insert_tag(self, work_id, tag, tag_type):
-        print(tag, ':', tag_type)
         self.cursor.execute('INSERT INTO work_tags VALUES (?,?,?)', (work_id, tag, tag_type))
 
     def insert_series(self, work_id, series_id):
         self.cursor.execute('INSERT INTO series VALUES (?,?)', (work_id, series_id))
 
-    def get_works(self):
-        pass
+    #Returns an iterator that iterates over the 
+    def get_work_iterator(self, load_chapters=False):
+        return WorkIterator(self.conn)
+
+    #Returns the cursor that can be used as an iterator
+    def get_chapter_iterator(self):
+        return ChapterIterator(self.conn)

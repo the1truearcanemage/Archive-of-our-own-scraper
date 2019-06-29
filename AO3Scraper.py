@@ -50,7 +50,7 @@ class Chapter(object):
 
 #Class for storing information relating to a single fanfiction work
 class Work(object):
-    def __init__(self, work_id, fandom, title, author, summary, warning_tags, relationship_tags, character_tags, assorted_tags, language, words, kudos, hits, bookmarks, comment_count, chapter_count, series_ids):
+    def __init__(self, work_id, fandom, title, author, summary, language, words, kudos, hits, bookmarks, comment_count, chapter_count, warning_tags, relationship_tags, character_tags, assorted_tags, series_ids):
         self.work_id = work_id
         self.fandom = fandom
         self.title = title
@@ -114,7 +114,7 @@ class Work(object):
         series_elem = result_element.find(class_='series')
         series_ids = [link_elem['href'].split('/')[-1] for link_elem in series_elem.find_all('a')] if series_elem else []
 
-        return Work(work_id, fandom, title, author, summary, warning_tags, relationship_tags, character_tags, assorted_tags, language, words, kudos, hits, bookmarks, comment_count, chapter_count, series_ids)
+        return Work(work_id, fandom, title, author, summary, language, words, kudos, hits, bookmarks, comment_count, chapter_count, warning_tags, relationship_tags, character_tags, assorted_tags, series_ids)
         
     #Fetch all chapters for a given work
     def fetch_chapters(self):
