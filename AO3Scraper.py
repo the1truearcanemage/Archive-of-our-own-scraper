@@ -50,7 +50,7 @@ class Chapter(object):
 
 #Class for storing information relating to a single fanfiction work
 class Work(object):
-    def __init__(self, work_id, fandom, title, author, summary, language, words, kudos, hits, bookmarks, comment_count, chapter_count, warning_tags, relationship_tags, character_tags, assorted_tags, series_ids):
+    def __init__(self, work_id, fandom, title, author, summary, language, words, kudos, hits, bookmarks, comment_count, chapter_count, warning_tags, relationship_tags, character_tags, assorted_tags, series_ids, chapters=[]):
         self.work_id = work_id
         self.fandom = fandom
         self.title = title
@@ -68,6 +68,7 @@ class Work(object):
         self.warning_tags = warning_tags
         self.assorted_tags = assorted_tags
         self.series_ids = series_ids
+        self.chapters = chapters
 
     #Parse required values about a work, from a work search result's html
     @staticmethod

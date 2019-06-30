@@ -3,6 +3,8 @@ from AO3Scraper import Work, Chapter
 
 class WorkIterator(object):
     def __init__(self, conn, load_chapters=False):
+        self.load_chapters = load_chapters
+
         self.conn = conn
         self.cursor = conn.cursor()
         #Fetch all works, with the row elements matching the order of the Work constructor
@@ -11,13 +13,14 @@ class WorkIterator(object):
     def filter_tags(self, tags, tag_type):
         return [tag[1] for tag in filter(lambda tag: tag[2] == tag_type, tags)]
 
-    def make_work_from_rows(self, work_row, work_tag_rows, series_id_rows):
+    def make_work_from_rows(self, work_row, work_tag_rows, series_id_rows, chapter_rows):
         warning_tags = self.filter_tags(work_tag_rows, 'warning')
         relationship_tags = self.filter_tags(work_tag_rows, 'relationship')
         character_tags = self.filter_tags(work_tag_rows, 'character')
         assorted_tags = self.filter_tags(work_tag_rows, 'assorted')
         series_ids = [row[1] for row in series_id_rows]
-        return Work(*work_row[:-1], warning_tags, relationship_tags, character_tags, assorted_tags, series_ids)
+        chapters = [Chapter(*row) for row in chapter_rows] 
+        return Work(*work_row[:-1], warning_tags, relationship_tags, character_tags, assorted_tags, series_ids, chapters=chapters)
 
     def __iter__(self):
         return self
@@ -27,8 +30,9 @@ class WorkIterator(object):
         work_id = work_row[0]
         work_tag_rows = self.conn.cursor().execute('SELECT * FROM work_tags WHERE work_id=?', (work_id, )).fetchall()
         series_id_rows = self.conn.cursor().execute('SELECT * FROM series WHERE work_id=?', (work_id, )).fetchall()
+        chapter_rows = self.conn.cursor().execute('SELECT * FROM chapters WHERE work_id=?', (work_id, )).fetchall() if self.load_chapters else []
 
-        return self.make_work_from_rows(work_row, work_tag_rows, series_id_rows)
+        return self.make_work_from_rows(work_row, work_tag_rows, series_id_rows, chapter_rows)
 
 class ChapterIterator(object):
     def __init__(self, conn):
@@ -157,7 +161,7 @@ class AO3Database(object):
 
     #Returns an iterator that iterates over the 
     def get_work_iterator(self, load_chapters=False):
-        return WorkIterator(self.conn)
+        return WorkIterator(self.conn, load_chapters=load_chapters)
 
     #Returns the cursor that can be used as an iterator
     def get_chapter_iterator(self):
