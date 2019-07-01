@@ -59,9 +59,11 @@ class AO3Database(object):
         try:
             self.conn = sqlite3.connect(filepath)
             self.cursor = self.conn.cursor()
-            self.build_tables()
         except sqlite3.Error as e:
             print('Error connecting to sqlite database!')
+
+        #If conneciton succeeded then build tables
+        self.build_tables()
 
     def commit():
         if self.curr:
@@ -124,6 +126,11 @@ class AO3Database(object):
             );
         ''')
         
+        self.cursor.execute('CREATE INDEX IF NOT EXISTS work_work_id ON works(work_id)')
+        self.cursor.execute('CREATE INDEX IF NOT EXISTS series_ids_work_id ON series(work_id)')
+        self.cursor.execute('CREATE INDEX IF NOT EXISTS tags_work_id ON work_tags(work_id)')
+        self.cursor.execute('CREATE INDEX IF NOT EXISTS chapters_work_id ON chapters(work_id)')
+
 
     def insert_work(self, work, save_chapters=False):
         w = work
